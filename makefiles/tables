@@ -1,0 +1,19 @@
+CURRENT_DIR=${DIR_PROJECT}include/tables/
+DIR_HEADERS=${CURRENT_DIR}
+DIR_IMPLEMENTATIONS=${CURRENT_DIR}implement/
+
+DIR_TREE_H=${DIR_PROJECT}include/tree/
+
+HEADERS=stringtab.h symtab.h main_tables.h cool_tree_forward.h
+CFIL=stringtab.cc main_tables.cc
+OBJS=${CFIL:.cc=.o}
+
+CFLAGS=-I${DIR_HEADERS} -I${DIR_INCLUDES_H} -I${DIR_TREE_H}
+
+.PHONY: tables
+
+tables: ${OBJS} $(addprefix ${DIR_HEADERS}, ${HEADERS})
+
+%.o: $(addprefix ${DIR_IMPLEMENTATIONS}, %.cc)
+	${CC} ${CFLAGS} -c $< -o $(addprefix ${DIR_BUILD}, $@) 
+ 

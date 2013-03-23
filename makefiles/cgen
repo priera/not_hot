@@ -1,0 +1,24 @@
+CGEN_DIR=${DIR_PROJECT}cgen/
+DIR_INCLUDES_H=${DIR_PROJECT}include/
+DIR_HEADERS=${DIR_PROJECT}cgen/
+
+DIR_TREE_H=${DIR_PROJECT}include/tree/
+DIR_TABLES_H=${DIR_PROJECT}include/tables/
+
+CURRENT_DIR=${DIR_PROJECT}cgen/
+DIR_IMPLEMENTATIONS=${CURRENT_DIR}implement/
+
+HEADERS=emitter.h
+
+CFIL=emitter.cc cgen_driver.cc cgen_symbol.cc cgen_node.cc constants.cc cgen_tables.cc expression_coder.cc
+
+OBJS=${CFIL:.cc=.o}
+
+CFLAGS=-I${DIR_INCLUDES_H} -I${DIR_HEADERS} -I${DIR_TREE_H} -I${DIR_TABLES_H} -Wno-write-strings
+
+.PHONY: semant 
+
+cgen: ${OBJS} $(addprefix ${DIR_HEADERS}, ${HEADERS})
+
+%.o: $(addprefix ${DIR_IMPLEMENTATIONS}, %.cc)
+	${CC} ${CFLAGS} -c $< -o $(addprefix ${DIR_BUILD}, $@)  

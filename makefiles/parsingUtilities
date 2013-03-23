@@ -1,0 +1,39 @@
+CC=g++
+
+DIR_PROJECT=/home/pedro/src/coolc
+PARSING_UTILS_DIR=${DIR_PROJECT}/parsingUtils
+HEADERS_DIR=${DIR_PROJECT}/include
+
+BUILD_DIR=${DIR_PROJECT}/build
+
+LEXER_DIR=${PARSING_UTILS_DIR}/lexer
+LEXER_FIL=lex.yy.cc
+LEXER_OBJS=${LEXER_FIL:.cc=.o}
+
+PARSER_DIR=${PARSING_UTILS_DIR}/parser
+PARSER_FIL=cool.tab.cc
+PARSER_OBJS=${PARSER_FIL:.cc=.o}
+
+DRIVER_DIR=${PARSING_UTILS_DIR}/driver
+DRIVER_FIL=ParserDriver.cc
+DRIVER_OBJS=${DRIVER_FIL:.cc=.o}
+
+CFLAGS=-I${HEADERS_DIR} -I${PARSING_UTILS_DIR} -Wno-write-strings
+
+all: generate_lexer generate_parser build_lexer build_parser build_driver
+	
+generate_lexer:
+	cd ${LEXER_DIR}; flex cool.flex
+
+generate_parser:
+	cd ${PARSER_DIR}; bison cool.yy; mv *.hh ..
+	
+build_lexer: 
+	${CC} ${CFLAGS} -c $< $(addprefix ${LEXER_DIR}/, ${LEXER_FIL}) -o $(addprefix ${BUILD_DIR}/, ${LEXER_OBJS})
+	
+build_parser:
+	${CC} ${CFLAGS} -c $< $(addprefix ${PARSER_DIR}/, ${PARSER_FIL}) -o $(addprefix ${BUILD_DIR}/, ${PARSER_OBJS})
+
+build_driver:
+	${CC} ${CFLAGS} -c $< $(addprefix ${DRIVER_DIR}/, ${DRIVER_FIL}) -o $(addprefix ${BUILD_DIR}/, ${DRIVER_OBJS})
+

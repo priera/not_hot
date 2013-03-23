@@ -1,0 +1,27 @@
+HEADERS=cool-io.h cool.h flags.h lineno_mng.h list.h stanford-copyright.h symbol.h utilities.h typing_errors.h
+TARGETS=basic_definitions tree tables
+
+CURRENT_DIR=${DIR_PROJECT}/include/
+DIR_IMPLEMENTATIONS=${CURRENT_DIR}implement/
+DIR_HEADERS=${DIR_PROJECT}include/
+export DIR_INCLUDES_H=${DIR_HEADERS}
+
+CFLAGS=-I${DIR_HEADERS}
+
+CFIL=flags.cc lineno_mng.cc symbol.cc utilities.cc typing_errors.cc
+OBJS=${CFIL:.cc=.o}
+
+.PHONY: include_ basic_definitions tables tree
+
+include_: ${TARGETS}
+
+basic_definitions: $(addprefix ${DIR_HEADERS}, ${HEADERS}) ${OBJS}
+
+tree: 
+	$(MAKE) -f $@
+
+tables:
+	$(MAKE) -f $@
+
+%.o: $(addprefix ${DIR_IMPLEMENTATIONS}, %.cc)
+	${CC} ${CFLAGS} -c $< -o $(addprefix ${DIR_BUILD}, $@) 

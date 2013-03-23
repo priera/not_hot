@@ -1,0 +1,22 @@
+SEMANT_DIR=${DIR_PROJECT}semant/
+DIR_INCLUDES_H=${DIR_PROJECT}include/
+DIR_HEADERS=${DIR_PROJECT}semant/
+
+DIR_TREE_H=${DIR_PROJECT}include/tree/
+DIR_TABLES_H=${DIR_PROJECT}include/tables/
+
+CURRENT_DIR=${DIR_PROJECT}semant/
+DIR_IMPLEMENTATIONS=${CURRENT_DIR}implement/
+
+CFIL=semant_driver.cc inheritance_checker.cc
+
+OBJS=${CFIL:.cc=.o}
+
+CFLAGS=-I${DIR_INCLUDES_H} -I${DIR_HEADERS} -I${DIR_TREE_H} -I${DIR_TABLES_H} -Wno-write-strings
+
+.PHONY: semant 
+
+semant: ${OBJS}
+
+%.o: $(addprefix ${DIR_IMPLEMENTATIONS}, %.cc)
+	${CC} ${CFLAGS} -c $< -o $(addprefix ${DIR_BUILD}, $@) 
