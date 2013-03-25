@@ -19,6 +19,7 @@ namespace cgen {
 		const string BOOLTAG = "_bool_tag";
 		const string STRINGTAG = "_string_tag";
 		const string HEAP_START = "heap_start";
+		const string DISPATCH_VOID_HANDLER = "_dispatch_abort";
 		
 		// Naming conventions
 		const string DISPTAB_SUFFIX = "_dispTab";
@@ -126,6 +127,8 @@ namespace cgen {
 		
 		static void load_int(std::string dest, const symbol::CgenIntEntry & i, ostream & s);
 		
+		static void default_value_ref(Symbol type, ostream & s);
+		
 		static void move(std::string dest_reg, std::string source_reg, ostream & s);
 		
 		static void neg(std::string dest, std::string src1, ostream & s);
@@ -216,6 +219,7 @@ namespace cgen {
 		
 		static void string_constant(char* s, ostream & str);
 		
+		static void check_dispatch_on_void(int not_void_label, int lineno, symbol::CgenStringEntry & entry, ostream & s);
 	};
 	
 } 

@@ -18,18 +18,8 @@ int CgenAttribute::get_locals_in_init() { return locals_in_init_; }
 
 void CgenAttribute::emitDef(ostream & out){
 	out << WORD;
-	::Constants c = GlobalTables::getInstance().get_constants();
 	
-	if (type_decl == c.Int) {
-		CgenIntEntry::empty().code_ref(out);
-	} else if ( type_decl == c.Str){
-		CgenStringEntry::empty().code_ref(out);
-	} else if (type_decl == c.Bool) {
-		BoolConst::false_().code_ref(out);
-	} else {
-		out << "0";
-	} 
-	out << endl;
+	Emitter::default_value_ref(type_decl, out);
 }
 
 void CgenAttribute::codeInitExpr(ostream & output){
@@ -37,7 +27,19 @@ void CgenAttribute::codeInitExpr(ostream & output){
 	IdentifierAccessTable::getInstance().resetFPPosition();
 	ExpressionCoder(init).code(output);
 	
-	//Emitter::load(T1, -1, FP, output); 
+}
+
+bool CgenAttribute::type_has_default_value() {
+	::Constants c = GlobalTables::getInstance().get_constants();
+	
+	return (type_decl == c.Int || type_decl == c.Str || type_decl == c.Bool);
+}
+
+void CgenAttribute::codeInitialization(ostream & output){
+	if (has_init_expr()) {
+		codeInitExpr(output);
+	} 
+	
 	emitStoreVal(SELF, output);
 }
 
@@ -95,7 +97,7 @@ bool CgenMethod::is_basic() {
 }
 
 CgenNode::CgenNode(class__class c, CgenNode * parent) : class__class(c), parentnd_(parent), cgen_children_(NULL), attributes_(NULL), own_attributes_(NULL), methods_(NULL), \
-	own_methods_(NULL), classtag_(-1), size_(-1), attr_count_(0), method_count_(0)
+	own_methods_(NULL), overridden_methods_(NULL), classtag_(-1), size_(-1), attr_count_(0), method_count_(0)
 	{
 		set_classtag();
 		
@@ -152,63 +154,58 @@ void CgenNode::set_locals_in_constructor() {
 
 void CgenNode::collect_features() {
 	
-		if (parentnd_ != NULL ){
-			methods_ = parentnd_->methods_->copy();
-			attributes_ = parentnd_->attributes_;
-			attr_count_ += parentnd_->attr_count_;
-			method_count_ += parentnd_->method_count_;
-		}
-	
-		own_attributes_ = NULL;
-		AttributesIterator iter_attr = getAttributesIterator();
-		while (iter_attr.more()){
-			CgenAttribute * attr = new CgenAttribute(*(iter_attr.current()),*this, attr_count_);
-			attr_count_++;
-			own_attributes_ = new List<CgenAttribute>(attr, own_attributes_);
-			iter_attr.move();
-		}
-		
-		own_attributes_ = own_attributes_->reverse();
-		attributes_ = List<CgenAttribute>::concat(attributes_, own_attributes_->copy());
-		set_locals_in_constructor();
-		
-		MethodsOverridingTable table = MethodsOverridingTable::getInstance();
-		
-		own_methods_ = NULL;
-		MethodsIterator iter_met = getMethodsIterator();
-		CgenMethod * base_method = NULL;
-
-		while (iter_met.more()){
-			
- 			CgenMethod * met = new CgenMethod(*(iter_met.current()),*this,method_count_);
-			base_method = table.lookup(met->get_name());
-			
-			if ( base_method != NULL) {
-				List<CgenMethod>::remove(methods_, base_method);
-			}
-			
-			method_count_++;
-			table.addid(met->get_name(), met);
-			own_methods_ = new List<CgenMethod>(met, own_methods_);
-			iter_met.move();
-		}
-		
-		own_methods_ = own_methods_->reverse();		
-		methods_ = List<CgenMethod>::concat(methods_, own_methods_->copy());
-		removeMethodsGaps();
-}
-
-void CgenNode::removeMethodsGaps() {
-	int previous_offset = -1;
-	int current_offset = 0;
-	
-	for (List<CgenMethod> * l =  methods_; l; l = l->tl()){
-		current_offset = l->hd()->get_offset();
-		if (previous_offset < current_offset - 1 ){
-			l->hd()->set_offset(previous_offset + 1);
-		}
-		previous_offset = l->hd()->get_offset();
+	if (parentnd_ != NULL ){
+		methods_ = parentnd_->methods_->copy();
+		attributes_ = parentnd_->attributes_;
+		attr_count_ += parentnd_->attr_count_;
+		method_count_ += parentnd_->method_count_;
 	}
+	
+	own_attributes_ = NULL;
+	AttributesIterator iter_attr = getAttributesIterator();
+	while (iter_attr.more()){
+		CgenAttribute * attr = new CgenAttribute(*(iter_attr.current()),*this, attr_count_);
+		attr_count_++;
+		own_attributes_ = new List<CgenAttribute>(attr, own_attributes_);
+		iter_attr.move();
+	}
+		
+	own_attributes_ = own_attributes_->reverse();
+	attributes_ = List<CgenAttribute>::concat(attributes_, own_attributes_->copy());
+	set_locals_in_constructor();
+	
+	MethodsOverridingTable & table = MethodsOverridingTable::getInstance();
+	
+	own_methods_ = NULL;
+	MethodsIterator iter_met = getMethodsIterator();
+	CgenMethod * base_method = NULL;
+		
+	CgenMethod * met = NULL;
+	while (iter_met.more()){
+		method_class * cur = iter_met.current();
+		base_method = table.lookup(cur->get_name());
+		met = NULL;
+		
+		if ( base_method != NULL) {
+			int met_offset = base_method->get_offset();
+			met = new CgenMethod(*cur,*this,met_offset);
+			List<CgenMethod>::replace(methods_, base_method, met);
+			overridden_methods_ = new List<CgenMethod>(met, overridden_methods_);
+			
+		} else {
+			met = new CgenMethod(*cur,*this,method_count_);
+			own_methods_ = new List<CgenMethod>(met, own_methods_);
+			method_count_++;
+		}
+		
+		table.addid(met->get_name(), met);
+		iter_met.move();
+			
+	}
+	
+	own_methods_ = own_methods_->reverse();		
+	methods_ = List<CgenMethod>::concat(methods_, own_methods_->copy());
+		
 }
 
 void CgenNode::set_object_size() {
@@ -284,22 +281,41 @@ void CgenNode::codeInitializer(ostream & output){
 	CgenAttribute * attr;
 	while (iter->more()) {
 		attr = iter->current();
-		if (attr->has_init_expr()) {
-			attr->codeInitExpr(output);
-		}
-		acc_table.addid(attr->get_name(), new IdentifierAccess(IdentifierAccess::MEMBER,attr->get_offset()));
+
+		attr->codeInitialization(output);
+		
 		iter->move();
 	}
 	
 	Emitter::callee_return(0, locals_in_constructor_, output);
 
 }
+
+void CgenNode::registerAttributes() {
+	static IdentifierAccessTable & acc_table = IdentifierAccessTable::getInstance();
 	
+	BasicListIterator<CgenAttribute> * iter = own_attributes_->getIterator();
+	CgenAttribute * attr;
+	while (iter->more()) {
+		attr = iter->current();
+		
+		acc_table.addid(attr->get_name(), new IdentifierAccess(IdentifierAccess::MEMBER,attr->get_offset()));
+		iter->move();
+	}
+	
+}
+
 void CgenNode::codeMethods(ostream & output){
 	
 	if (!is_basic_class_){
+		BasicListIterator<CgenMethod> * iter = overridden_methods_->getIterator();
+		while (iter->more()) {
+			
+			iter->current()->code(output);
+			iter->move();
+		}
 		
-		BasicListIterator<CgenMethod> * iter = own_methods_->getIterator();
+		iter = own_methods_->getIterator();
 		while (iter->more()) {
 			
 			iter->current()->code(output);
@@ -316,10 +332,12 @@ void CgenNode::code(ostream & output){
 	acc_table.enterscope();
 	acc_table.addid(GlobalTables::getInstance().get_constants().self, new IdentifierAccess(IdentifierAccess::SELF));
 	
+	registerAttributes();
+	
 	codeInitializer(output);
 	
 	codeMethods(output);
-	
+		
 	BasicListIterator<CgenNode> * iter = cgen_children_->getIterator();
 	while (iter->more()) {
 		iter->current()->code(output);

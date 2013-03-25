@@ -21,6 +21,7 @@ namespace cgen {
 		List<CgenAttribute> *own_attributes_;
 		List<CgenMethod> *methods_;
 		List<CgenMethod> *own_methods_;
+		List<CgenMethod> *overridden_methods_;
 		
 		int classtag_;
 		int size_;
@@ -35,11 +36,10 @@ namespace cgen {
 		void set_object_size();
 		void set_locals_in_constructor();
 		
-		void removeMethodsGaps();
-		
 		void emitDispatchTableContent(ostream & ouput);
 		void codeInitBody(ostream & output);
 		
+		void registerAttributes();
 		void codeInitializer(ostream & output);
 		void codeMethods(ostream & output);
 		
@@ -65,13 +65,17 @@ namespace cgen {
 		CgenNode * class__;
 		int locals_in_init_;
 		
+		void codeInitExpr(ostream & output);
+		bool type_has_default_value();
+		
 	public:
 		CgenAttribute(attr_class attr, CgenNode & class_, int offset);
 		
 		int get_offset();
 		int get_locals_in_init();
+		
+		void codeInitialization(ostream & output);
 		void emitDef(ostream & output);
-		void codeInitExpr(ostream & output);
 		void emitStoreVal(std::string self_reg, ostream & s);
 	};
 	

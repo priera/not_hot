@@ -29,6 +29,15 @@ void ExpressionCoder::code_assign(ostream &s){
 
 void ExpressionCoder::code_static_dispatch(ostream &s){
 	static_dispatch_class * dispatch = (static_dispatch_class *)expr_;
+	CgenNode * class_ = NULL;
+	Symbol type = dispatch->get_type_name();
+	
+	if (type == GlobalTables::getInstance().get_constants().SELF_TYPE) {
+		class_ = CurrentCoding::getInstance().get_current_class();
+	} else {
+		class_ = CgenNodesTable::getInstance().findNode(type);
+	}
+	
 	Emitter::push(FP,s);
 	Emitter::push(SELF,s);
 	
@@ -41,16 +50,12 @@ void ExpressionCoder::code_static_dispatch(ostream &s){
 	
 	ExpressionCoder(dispatch->get_expr()).code(s);
 	
-	//TODO: check dispatch on void!!!!
-	Emitter::move(SELF,ACC,s);
+	//check for dispath on void
+	int not_void_label = LabelMgr::getInstance().nextLabel();
+	CgenStringEntry entry(*((StringEntry *)class_->get_filename()));
+	Emitter::check_dispatch_on_void(not_void_label, dispatch->get_line_number(), entry, s);
 	
-	CgenNode * class_ = NULL;
-	Symbol type = dispatch->get_type_name();
-	if (type == GlobalTables::getInstance().get_constants().SELF_TYPE) {
-		class_ = CurrentCoding::getInstance().get_current_class();
-	} else {
-		class_ = CgenNodesTable::getInstance().findNode(type);
-	}
+	Emitter::move(SELF,ACC,s);
 	
 	CgenMethod * method = class_->findMethod(dispatch->get_name());
 	int method_offset = method->get_offset();
@@ -68,6 +73,15 @@ void ExpressionCoder::code_static_dispatch(ostream &s){
 
 void ExpressionCoder::code_dispatch(ostream &s){
 	dispatch_class * dispatch = (dispatch_class *)expr_;
+	CgenNode * class_ = NULL;
+	Symbol e0_type = dispatch->get_expr()->get_type();
+	
+	if (e0_type == GlobalTables::getInstance().get_constants().SELF_TYPE) {
+		class_ = CurrentCoding::getInstance().get_current_class();
+	} else {
+		class_ = CgenNodesTable::getInstance().findNode(e0_type);
+	}
+	
 	Emitter::push(FP,s);
 	Emitter::push(SELF,s);
 	
@@ -81,17 +95,12 @@ void ExpressionCoder::code_dispatch(ostream &s){
 	
 	ExpressionCoder(dispatch->get_expr()).code(s);
 	
-	//TODO: check dispatch on void!!!!
+	//check for dispath on void
+	int not_void_label = LabelMgr::getInstance().nextLabel();
+	CgenStringEntry entry(*((StringEntry *)class_->get_filename()));
+	Emitter::check_dispatch_on_void(not_void_label, dispatch->get_line_number(), entry, s);
+	
 	Emitter::move(SELF,ACC,s);
-	
-	CgenNode * class_ = NULL;
-	Symbol e0_type = dispatch->get_expr()->get_type();
-	
-	if (e0_type == GlobalTables::getInstance().get_constants().SELF_TYPE) {
-		class_ = CurrentCoding::getInstance().get_current_class();
-	} else {
-		class_ = CgenNodesTable::getInstance().findNode(e0_type);
-	}
 	
 	CgenMethod * method = class_->findMethod(dispatch->get_name());
 	
@@ -101,9 +110,10 @@ void ExpressionCoder::code_dispatch(ostream &s){
 	Emitter::load(T1,method_offset,T1,s);
 	Emitter::jalr(T1,s);
 	
-	//Base class' methods doesn't pop FP and SELF from the stack, so this is done here
+	//Base class methods doesn't pop FP and SELF from the stack, so this is done here
 	if (method->is_basic()){
-		Emitter::addiu(SP,SP,2*WORD_SIZE,s);
+		Emitter::pop(SELF,s);
+		Emitter::addiu(SP,SP,WORD_SIZE,s);
 	}
 	
 }
@@ -167,8 +177,13 @@ void ExpressionCoder::code_block(ostream &s){
 void ExpressionCoder::code_let(ostream &s){
 	IdentifierAccessTable & acc_table = IdentifierAccessTable::getInstance();
 	let_class * let = (let_class *)expr_;
-			
-	ExpressionCoder(let->get_init()).code(s);
+	
+	if (let->get_init()->get_expr_type() == Expression_class::NO_EXPR) {
+		Emitter::partial_load_address(ACC, s);
+		Emitter::default_value_ref(let->get_type_decl(), s);
+	} else {
+		ExpressionCoder(let->get_init()).code(s);
+	}
 	
 	acc_table.enterscope();
 	Symbol id = let->get_identifier();
@@ -388,7 +403,7 @@ void ExpressionCoder::code_new(ostream &s){
 	}
 	
 	Emitter::new_(class_name,s);
-	
+	Emitter::pop(ACC,s);
 }
 
 void ExpressionCoder::code_isvoid(ostream &s){

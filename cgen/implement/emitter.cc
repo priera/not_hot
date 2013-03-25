@@ -50,6 +50,28 @@ void Emitter::load_int(std::string dest, const symbol::CgenIntEntry & i, ostream
 	s << endl;
 }
 
+void Emitter::default_value_ref(Symbol type, ostream & s){
+	using namespace ::cgen::symbol;
+	
+	::Constants c = GlobalTables::getInstance().get_constants();
+	
+	if (type == c.Int) {
+		CgenIntEntry::empty().code_ref(s);
+	} else if ( type == c.Str){
+		CgenStringEntry::empty().code_ref(s);
+	} else if (type == c.Bool) {
+		BoolConst::false_().code_ref(s);
+	} else {
+		s << "0";
+	} 
+	
+	s << endl;
+}
+
+/*void Emitter::check_dispatch_on_void(ostream & s){
+	
+}*/
+
 void Emitter::move(std::string dest_reg, std::string source_reg, ostream & s)
 { s << MOVE << dest_reg << " " << source_reg << endl; }
 
@@ -225,18 +247,20 @@ void Emitter::new_(Symbol class_name, ostream & s){
 	partial_load_address(ACC, s); Emitter::protobj_ref(class_name,s);
 	s << endl;
 	
-	Emitter::jal("Object.copy",s);	
+	Emitter::jal("Object.copy",s);
+	push(ACC,s); //Since the initialization can override the pointer to the new object, it is saved
+
 	push(FP,s);
 	push(SELF,s);
 	move(SELF,ACC,s);
 	
 	jal(std::string(class_name->get_string()) + CLASSINIT_SUFFIX,s);
-	
 }
 
 void Emitter::new_int(std::string reg_name, ostream & s){
 	push(reg_name,s);
 	new_(GlobalTables::getInstance().get_constants().Int, s);	
+	pop(ACC,s);
 	pop(reg_name,s);
 	store_int(reg_name,ACC,s);
 }
@@ -255,6 +279,17 @@ void Emitter::gc_check(std::string source, ostream & s)
 {
 	if (source.compare(A1) == 0) move(A1, source, s);
 	s << JAL << "_gc_check" << endl;
+}
+
+void Emitter::check_dispatch_on_void(int not_void_label, int lineno, symbol::CgenStringEntry & entry, ostream & s){
+	Emitter::load_imm(T1,0,s);
+	Emitter::bne(ACC,T1,not_void_label,s);
+	Emitter::load_imm(T1,lineno,s);
+	Emitter::partial_load_address(ACC,s);
+	entry.code_ref(s); s << endl;
+	Emitter::jal(DISPATCH_VOID_HANDLER, s);
+	
+	Emitter::label_def(not_void_label,s);
 }
 
 int Emitter::ascii = 0;

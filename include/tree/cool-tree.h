@@ -628,6 +628,7 @@ public:
 	Symbol get_identifier() { return identifier; };
 	Expression get_init() { return init; };
 	Expression get_body() { return body; };
+	Symbol get_type_decl() { return type_decl; };
 	
 	void dump_with_types(ostream&,int);
    
