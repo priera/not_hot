@@ -45,6 +45,7 @@ void ExpressionCoder::code_static_dispatch(ostream &s){
 	Expressions actuals = dispatch->get_actuals();
 	for (int i = actuals->first(); actuals->more(i); i = actuals->next(i)){
 		ExpressionCoder(actuals->nth(i)).code(s);
+		//Emitter::jal("Object.copy",s);
 		Emitter::push(ACC,s);
 	}
 	
@@ -65,9 +66,11 @@ void ExpressionCoder::code_static_dispatch(ostream &s){
 	Emitter::jalr(T1,s);
 	
 	//Base class' methods doesn't pop FP and SELF from the stack, so this is done here
-	if (method->is_basic()){
-		Emitter::addiu(SP,SP,2*WORD_SIZE,s);
-	}
+	//if (method->is_basic()){
+	Emitter::pop(SELF,s);
+	Emitter::pop(FP,s);
+		//Emitter::addiu(SP,SP,2*WORD_SIZE,s);
+	//}
 	
 }
 
@@ -90,6 +93,7 @@ void ExpressionCoder::code_dispatch(ostream &s){
 	
 	for (int i = actuals->first(); actuals->more(i); i = actuals->next(i)){
  		ExpressionCoder(actuals->nth(i)).code(s);
+		//Emitter::jal("Object.copy",s);
 		Emitter::push(ACC,s);
 	}
 	
@@ -111,10 +115,10 @@ void ExpressionCoder::code_dispatch(ostream &s){
 	Emitter::jalr(T1,s);
 	
 	//Base class methods doesn't pop FP and SELF from the stack, so this is done here
-	if (method->is_basic()){
+	//if (method->is_basic()){
 		Emitter::pop(SELF,s);
-		Emitter::addiu(SP,SP,WORD_SIZE,s);
-	}
+		Emitter::pop(FP,s);
+	//}
 	
 }
 
@@ -301,6 +305,7 @@ void ExpressionCoder::code_lt(ostream &s){
 
 void ExpressionCoder::code_eq(ostream &s){
 	eq_class * eq = (eq_class *)expr_;
+	::Constants & c = GlobalTables::getInstance().get_constants();
 	
 	ExpressionCoder(eq->get_ex1()).code(s);
 	Emitter::push(ACC,s);
@@ -309,23 +314,23 @@ void ExpressionCoder::code_eq(ostream &s){
 	Emitter::pop(T1,s);
 	
 	Emitter::move(T2,ACC,s);
-	Emitter::load_bool(ACC,BoolConst::true_(),s);
-	Emitter::load_bool(A1,BoolConst::false_(),s);
 	
-	Emitter::jal("equality_test",s);
-
-	Emitter::load_bool_val(T1,BoolConst::true_(),s);
-	Emitter::load(ACC,3,ACC,s);
-
-	int equal = LabelMgr::getInstance().nextLabel();
-	int done = LabelMgr::getInstance().nextLabel();
-	
-	Emitter::beq(ACC,T1,equal,s);
-	Emitter::load_bool(ACC,BoolConst::false_(),s);
-	Emitter::branch(done,s);
-	Emitter::label_def(equal,s);
-	Emitter::load_bool(ACC,BoolConst::true_(),s);
-	Emitter::label_def(done,s);
+	Symbol ex_type = eq->get_ex1()->get_type();
+	if ( ex_type == c.Int || ex_type == c.Bool || ex_type == c.Str ) {
+		Emitter::test_basic_equality(s);
+		
+	} else {
+		
+		int equal = LabelMgr::getInstance().nextLabel();
+		int done = LabelMgr::getInstance().nextLabel();
+		
+		Emitter::beq(T1,T2,equal,s);
+		Emitter::load_bool(ACC,BoolConst::false_(),s);
+		Emitter::branch(done,s);
+		Emitter::label_def(equal,s);
+		Emitter::load_bool(ACC,BoolConst::true_(),s);
+		Emitter::label_def(done,s);
+	}
 	
 }
 

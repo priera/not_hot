@@ -27,6 +27,7 @@ void CgenAttribute::codeInitExpr(ostream & output){
 	IdentifierAccessTable::getInstance().resetFPPosition();
 	ExpressionCoder(init).code(output);
 	
+	emitStoreVal(SELF, output);
 }
 
 bool CgenAttribute::type_has_default_value() {
@@ -39,8 +40,6 @@ void CgenAttribute::codeInitialization(ostream & output){
 	if (has_init_expr()) {
 		codeInitExpr(output);
 	} 
-	
-	emitStoreVal(SELF, output);
 }
 
 void CgenAttribute::emitStoreVal(std::string self_reg, ostream & s){
@@ -273,8 +272,8 @@ void CgenNode::codeInitializer(ostream & output){
 	if (parentnd_ != NULL){
 		//jump to parent
 		Emitter::push(FP,output);
-		Emitter::push(SELF, output);
 		output << JAL ; Emitter::init_ref(parentnd_->name, output); output << endl;
+		Emitter::pop(FP,output);
 	}
 	
 	BasicListIterator<CgenAttribute> * iter = own_attributes_->getIterator();

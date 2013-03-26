@@ -68,6 +68,28 @@ void Emitter::default_value_ref(Symbol type, ostream & s){
 	s << endl;
 }
 
+void Emitter::test_basic_equality(ostream & s){
+	using namespace ::cgen::symbol;
+	
+	load_bool(ACC,BoolConst::true_(),s);
+	load_bool(A1,BoolConst::false_(),s);
+	
+	jal("equality_test",s);
+	
+	load_bool_val(T1,BoolConst::true_(),s);
+	load(ACC,3,ACC,s);
+	
+	int equal = LabelMgr::getInstance().nextLabel();
+	int done = LabelMgr::getInstance().nextLabel();
+	
+	beq(ACC,T1,equal,s);
+	load_bool(ACC,BoolConst::false_(),s);
+	branch(done,s);
+	label_def(equal,s);
+	load_bool(ACC,BoolConst::true_(),s);
+	label_def(done,s);
+}
+
 /*void Emitter::check_dispatch_on_void(ostream & s){
 	
 }*/
@@ -237,9 +259,9 @@ void Emitter::callee_return(int arg_count, int locals_count, ostream & s){
 	int bytes = ((arg_count + locals_count) * WORD_SIZE) + WORD_SIZE;
 	addiu(SP,SP,bytes,s);
 	
-	//restores SELF, FP, and return
+	/*//restores SELF, FP, and return
 	pop(SELF,s);
-	pop(FP,s);
+	pop(FP,s);*/
 	return_(s);
 }
 
@@ -255,6 +277,9 @@ void Emitter::new_(Symbol class_name, ostream & s){
 	move(SELF,ACC,s);
 	
 	jal(std::string(class_name->get_string()) + CLASSINIT_SUFFIX,s);
+	
+	pop(SELF,s);
+	pop(FP,s);
 }
 
 void Emitter::new_int(std::string reg_name, ostream & s){

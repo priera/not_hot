@@ -2,6 +2,7 @@
 #define EMIT_H
 
 #include "cgen_symbol.h"
+#include "constants.h"
 
 using namespace std;
 
@@ -128,6 +129,8 @@ namespace cgen {
 		static void load_int(std::string dest, const symbol::CgenIntEntry & i, ostream & s);
 		
 		static void default_value_ref(Symbol type, ostream & s);
+		
+		static void test_basic_equality(ostream & s);
 		
 		static void move(std::string dest_reg, std::string source_reg, ostream & s);
 		
