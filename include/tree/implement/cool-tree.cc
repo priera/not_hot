@@ -197,11 +197,12 @@ void class__class::checkSemantics(Class_ parent, ConstraintClassError * &error){
 	}
 
 	oe.exitscope();
+	
 }
 
 void class__class::checkTypes(ObjectEnvironment oe){
 	oe.enterscope();
-	
+
 	Symbol SELF_TYPE = GlobalTables::getInstance().get_constants().SELF_TYPE;
 	Symbol self = GlobalTables::getInstance().get_constants().self;
 	oe.addid(self, SELF_TYPE);
@@ -351,13 +352,14 @@ void attr_class::checkType(ObjectEnvironment oe){
 	}
 	oe.enterscope();
 
+	
 	Symbol dynamic_type;
 	dynamic_type = get_init_expr()->typeIt(container_class, oe);
 	
 	if (dynamic_type == No_type || dynamic_type == SELF_TYPE){
 		dynamic_type = declared_type;
 	} 
-	
+
 	if (!ClassTable::getInstance().isSubtypeOf(dynamic_type, declared_type)) {
 		cout <<"name " << name << " dynamic_type: " << dynamic_type << " declared: " << declared_type << endl;
 		registerTypingError(std::string("Attribute's return type doesn't conform its declared type"));
@@ -503,14 +505,23 @@ Symbol cond_class::typeIt(Class_ container_class, ObjectEnvironment oe) {
 	}
 	
 	Symbol t1 = then_exp->typeIt(container_class, oe);
+	if (t1 == SELF_TYPE) {
+		t1 = container_class->get_name();
+	}
+	
 	Symbol t2 = else_exp->typeIt(container_class, oe);
+	if (t2 == SELF_TYPE) {
+		t2 = container_class->get_name();
+	}
 	
 	Symbol ret = ((error) ? Object : ClassTable::getInstance().lub(t1, t2));
+	
 	type = ret;
 	return type;
 }
 
 Symbol loop_class::typeIt(Class_ container_class, ObjectEnvironment oe) {
+
 	if (pred->typeIt(container_class, oe) != Bool) {
 		registerTypingError(std::string("Loop predicate must be of type Bool"));
 	}
