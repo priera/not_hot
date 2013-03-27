@@ -29,6 +29,7 @@ void Driver::codeGlobalData()
 	// The following global names must be defined first.
 	//
 	output_ << GLOBAL << CLASSNAMETAB << endl;
+	output_ << GLOBAL << CLASSOBJTAB << endl;
 	output_ << GLOBAL; Emitter::protobj_ref(main, output_);    output_ << endl;
 	output_ << GLOBAL; Emitter::protobj_ref(integer, output_); output_ << endl;
 	output_ << GLOBAL; Emitter::protobj_ref(string, output_);  output_ << endl;
@@ -102,6 +103,26 @@ void Driver::emitClassNameTab(){
 
 }
 
+void Driver::emitClassTab(){
+	using namespace cgen::constants;
+	using namespace cgen::symbol;
+	
+	output_ << CLASSOBJTAB << LABEL;
+	
+	BasicListIterator<CgenNode> * iter = CgenNodesTable::getInstance().getIterator();
+	CgenNode * current;
+	
+	while (iter->more()){
+		current = iter->current();
+		output_ << WORD; Emitter::protobj_ref(current->get_name(), output_); output_ << endl;
+		output_ << WORD; Emitter::init_ref(current->get_name(), output_); output_ << endl;
+		
+		iter->move();
+	}
+	
+}
+
+
 void Driver::codeGlobalText() {
 	using namespace cgen::constants;
 	
@@ -160,6 +181,7 @@ void Driver::code(){
 	baseNodeClass_->emitPrototables(output_);
 	baseNodeClass_->emitDispatchTable(output_);
 	emitClassNameTab();
+	emitClassTab();
 
 	//Coding program's code
  	codeGlobalText();	

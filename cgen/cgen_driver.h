@@ -21,6 +21,8 @@ namespace cgen {
 		void codeConstantTables();
 		void codeBools();
 		void emitClassNameTab();
+		void emitClassTab();
+		void emitProtObjTab();
 		void codeGlobalText();
 		void codeInitializers();
 		

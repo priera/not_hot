@@ -41,11 +41,9 @@ void ExpressionCoder::code_static_dispatch(ostream &s){
 	Emitter::push(FP,s);
 	Emitter::push(SELF,s);
 	
-	//Expressions actuals = dispatch->get_actuals()->reverse();
 	Expressions actuals = dispatch->get_actuals();
 	for (int i = actuals->first(); actuals->more(i); i = actuals->next(i)){
 		ExpressionCoder(actuals->nth(i)).code(s);
-		//Emitter::jal("Object.copy",s);
 		Emitter::push(ACC,s);
 	}
 	
@@ -65,12 +63,8 @@ void ExpressionCoder::code_static_dispatch(ostream &s){
 	Emitter::load(T1,method_offset,T1,s);
 	Emitter::jalr(T1,s);
 	
-	//Base class' methods doesn't pop FP and SELF from the stack, so this is done here
-	//if (method->is_basic()){
 	Emitter::pop(SELF,s);
 	Emitter::pop(FP,s);
-		//Emitter::addiu(SP,SP,2*WORD_SIZE,s);
-	//}
 	
 }
 
@@ -88,12 +82,10 @@ void ExpressionCoder::code_dispatch(ostream &s){
 	Emitter::push(FP,s);
 	Emitter::push(SELF,s);
 	
-	//Expressions actuals = dispatch->get_actuals()->reverse();
 	Expressions actuals = dispatch->get_actuals();
 	
 	for (int i = actuals->first(); actuals->more(i); i = actuals->next(i)){
  		ExpressionCoder(actuals->nth(i)).code(s);
-		//Emitter::jal("Object.copy",s);
 		Emitter::push(ACC,s);
 	}
 	
@@ -114,11 +106,8 @@ void ExpressionCoder::code_dispatch(ostream &s){
 	Emitter::load(T1,method_offset,T1,s);
 	Emitter::jalr(T1,s);
 	
-	//Base class methods doesn't pop FP and SELF from the stack, so this is done here
-	//if (method->is_basic()){
-		Emitter::pop(SELF,s);
-		Emitter::pop(FP,s);
-	//}
+	Emitter::pop(SELF,s);
+	Emitter::pop(FP,s);
 	
 }
 
@@ -404,11 +393,42 @@ void ExpressionCoder::code_new(ostream &s){
 	Symbol class_name = ((new__class *)expr_)->get_type_name();
 	
 	if (class_name == SELF_) {
-		class_name = CurrentCoding::getInstance().get_current_class()->get_name();
+		
+		//Load protoObj reference and create new object. 
+		Emitter::load_address(ACC, CLASSOBJTAB, s);
+		Emitter::load(T1,TAG_OFFSET,SELF,s);
+		Emitter::sll(T1,T1,3,s); // T1 <= 2 * WORD_SIZE * T1 = 8 * T1 = 2^3 * T1
+		Emitter::add(ACC,T1,ACC,s);
+		Emitter::load(ACC,0,ACC,s);
+				
+		Emitter::jal("Object.copy",s);
+		
+		Emitter::push(ACC,s); //Since the initialization can override the pointer to the new object, it is saved
+		
+		//Load address of initialization method, and jump to it
+		Emitter::load_address(T2, CLASSOBJTAB, s);
+		Emitter::load(T1,TAG_OFFSET,SELF,s);
+		Emitter::sll(T1,T1,3,s); // T1 <= 2 * WORD_SIZE * T1 = 8 * T1 = 2^3 * T1
+		Emitter::addiu(T1,T1,WORD_SIZE,s);
+		Emitter::add(T1,T1,T2,s);
+		Emitter::load(T1,0,T1,s);
+		
+		//Common arguments saving
+		Emitter::push(FP,s);
+		Emitter::push(SELF,s);
+		Emitter::move(SELF,ACC,s);
+		
+		Emitter::jalr(T1,s);
+		
+		Emitter::pop(SELF,s);
+		Emitter::pop(FP,s);
+		
+	} else {		
+		Emitter::new_(class_name,s);
 	}
 	
-	Emitter::new_(class_name,s);
-	Emitter::pop(ACC,s);
+	Emitter::pop(ACC,s);	
+	
 }
 
 void ExpressionCoder::code_isvoid(ostream &s){
