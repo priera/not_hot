@@ -45,6 +45,24 @@ namespace cgen {
 		void addNode(CgenNode & nd);
 	};
 	
+	class CasesTable {
+	private:
+		int next_case_;
+		List<typcase_class> * cases_;
+		
+		CasesTable();
+	
+	public:
+		static CasesTable & getInstance();
+		
+		int get_next_case_index();
+		
+		BasicListIterator<typcase_class> * getIterator();
+		
+		void addCase(typcase_class & c);
+		
+	};
+	
 	class MethodsOverridingTable : public SymbolTable<Entry *, CgenMethod> {
 	private:
 		MethodsOverridingTable();

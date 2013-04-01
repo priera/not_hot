@@ -7,7 +7,6 @@ baseNodeClass_(new CgenNode(*((class__class *)ClassTable::getInstance().get_base
 	
 }
 
-
 char * Driver::getCharPointer(string str){
 	char * ca = new char[str.size()+1];
 	std::copy(str.begin(), str.end(), ca);
@@ -15,8 +14,7 @@ char * Driver::getCharPointer(string str){
 	return ca;
 }
 
-void Driver::codeGlobalData()
-{
+void Driver::codeGlobalData() {
 	using namespace constants;
 	
 	Symbol main    = GlobalTables::getInstance().idtable.lookup_string(getCharPointer(MAINNAME));
@@ -39,10 +37,15 @@ void Driver::codeGlobalData()
 	output_ << GLOBAL << BOOLTAG << endl;
 	output_ << GLOBAL << STRINGTAG << endl;
 	
+	output_ << GLOBAL << CLASS_COUNT_TAG << endl;
+	
 	output_ << GLOBAL; Emitter::dispatch_table_ref(main, output_); output_ << endl;
 	output_ << GLOBAL; Emitter::dispatch_table_ref(string, output_); output_ << endl;
 	output_ << GLOBAL; Emitter::dispatch_table_ref(integer, output_); output_ << endl;
 	output_ << GLOBAL; Emitter::dispatch_table_ref(boolc, output_); output_ << endl;
+	
+	output_ << CLASS_COUNT_TAG << LABEL << WORD <<  Constants::getInstance().classTagCount() << endl;
+	
 	//
 	// We also need to know the tag of the Int, String, and Bool classes
 	// during code generation.
@@ -111,9 +114,24 @@ void Driver::emitClassTab(){
 	
 	BasicListIterator<CgenNode> * iter = CgenNodesTable::getInstance().getIterator();
 	CgenNode * current;
+	CgenNode * parent;
 	
 	while (iter->more()){
 		current = iter->current();
+		parent = current->get_nd_parent();
+		
+		//parent's classtag
+		output_ << WORD; 
+		if (parent == NULL) {
+			output_ << "-1";
+		} else {
+			output_ << parent->get_classtag();
+		} 
+		output_ << "\n";
+		
+		//current class classtag
+		output_ << WORD << current->get_classtag() << "\n";
+		
 		output_ << WORD; Emitter::protobj_ref(current->get_name(), output_); output_ << endl;
 		output_ << WORD; Emitter::init_ref(current->get_name(), output_); output_ << endl;
 		
@@ -122,6 +140,37 @@ void Driver::emitClassTab(){
 	
 }
 
+void Driver::emitCasesTab() {
+	using namespace cgen::constants;
+	
+	CasesTable & cases = CasesTable::getInstance();
+	CgenNodesTable & nodes = CgenNodesTable::getInstance();
+	typcase_class * current = NULL;
+	Cases branches = NULL; 
+	
+	BasicListIterator<typcase_class> * iter = cases.getIterator();
+	while (iter->more()){
+		current = iter->current();
+		
+		Emitter::case_table_ref(current->get_index(), output_); output_ << LABEL;
+		output_ << WORD;
+		output_ << current->get_branches_count() << "\n";
+		
+		branches = current->get_cases();
+		branch_class * current_branch = NULL;
+		for (int i = branches->first(); branches->more(i); i = branches->next(i)){
+			current_branch = (branch_class *)branches->nth(i);
+			
+			output_ << WORD;
+			output_ << nodes.findNode(current_branch->get_type_decl())->get_classtag();
+			output_ << "\n";
+			
+			output_ << WORD; Emitter::case_branch_ref(current->get_index(), current_branch->get_index(), output_); output_ << endl;
+		}
+		
+		iter->move();
+	}
+}
 
 void Driver::codeGlobalText() {
 	using namespace cgen::constants;
@@ -144,6 +193,7 @@ void Driver::codeGlobalText() {
 	output_ << endl << GLOBAL;
 	Emitter::method_ref(c.Main, c.main_meth, output_);
 	output_ << endl;
+	Emitter::branch_resolver(output_);
 }
 
 void Driver::codeSelectGc() {
@@ -182,6 +232,7 @@ void Driver::code(){
 	baseNodeClass_->emitDispatchTable(output_);
 	emitClassNameTab();
 	emitClassTab();
+	emitCasesTab();
 
 	//Coding program's code
  	codeGlobalText();	

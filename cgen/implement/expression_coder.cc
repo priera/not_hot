@@ -157,6 +157,44 @@ void ExpressionCoder::code_loop(ostream &s){
 }
 
 void ExpressionCoder::code_typcase(ostream &s){
+	typcase_class * case_ = (typcase_class *)expr_;
+	IdentifierAccessTable & acc_table = IdentifierAccessTable::getInstance();
+	
+	//Code case expr
+	ExpressionCoder(case_->get_expr()).code(s);
+	
+	//Check dispatch on void
+	int not_void_label = LabelMgr::getInstance().nextLabel();
+	CgenNode * class_ = CurrentCoding::getInstance().get_current_class();
+	CgenStringEntry entry(*((StringEntry *)class_->get_filename()));
+	Emitter::check_case_on_void(not_void_label, case_->get_line_number(), entry, s);
+	
+	//Code case branches
+	Cases cases = case_->get_cases();
+	branch_class * cur_branch = NULL;
+	int offset =-(acc_table.increaseFPPosition());
+	Emitter::store(ACC,offset,FP,s);
+	
+	Emitter::jump_to_branch_resolver(case_->get_index(),s);
+	Emitter::jump_to_proper_branch(s);
+	
+	for (int i = cases->first(); cases->more(i); i = cases->next(i)){
+		cur_branch = (branch_class *)cases->nth(i);
+		
+		Emitter::case_branch_ref(case_->get_index(),cur_branch->get_index(),s); s << LABEL;
+		
+		acc_table.enterscope();
+		Symbol id = cur_branch->get_name();
+		acc_table.addid(id, new IdentifierAccess(IdentifierAccess::LOCAL, offset));
+	
+		ExpressionCoder(cur_branch->get_expr()).code(s);
+		Emitter::jump_to_case_end(case_->get_index(),s);
+		
+		acc_table.exitscope();
+	}
+	acc_table.decreaseFPPosition();
+	
+	Emitter::case_end_ref(case_->get_index(),s); s << LABEL;
 	
 }
 
@@ -394,31 +432,33 @@ void ExpressionCoder::code_new(ostream &s){
 	
 	if (class_name == SELF_) {
 		
-		//Load protoObj reference and create new object. 
+		//Load protoObj reference and create new object. Pushes table index into the stack
 		Emitter::load_address(ACC, CLASSOBJTAB, s);
 		Emitter::load(T1,TAG_OFFSET,SELF,s);
-		Emitter::sll(T1,T1,3,s); // T1 <= 2 * WORD_SIZE * T1 = 8 * T1 = 2^3 * T1
+		Emitter::load_imm(T2,WORDS_PER_CLASS_OBJ_ENTRY * WORD_SIZE,s); 
+ 		Emitter::mul(T1,T1,T2,s);
 		Emitter::add(ACC,T1,ACC,s);
+		Emitter::addiu(ACC,ACC,CLASS_OBJ_OFFSET_PROTOBJ * WORD_SIZE,s);
 		Emitter::load(ACC,0,ACC,s);
-				
+		Emitter::push(T1,s);
+		
 		Emitter::jal("Object.copy",s);
 		
+		Emitter::pop(T1,s);
 		Emitter::push(ACC,s); //Since the initialization can override the pointer to the new object, it is saved
 		
 		//Load address of initialization method, and jump to it
 		Emitter::load_address(T2, CLASSOBJTAB, s);
-		Emitter::load(T1,TAG_OFFSET,SELF,s);
-		Emitter::sll(T1,T1,3,s); // T1 <= 2 * WORD_SIZE * T1 = 8 * T1 = 2^3 * T1
-		Emitter::addiu(T1,T1,WORD_SIZE,s);
-		Emitter::add(T1,T1,T2,s);
-		Emitter::load(T1,0,T1,s);
+		Emitter::add(T2,T2,T1,s);
+		Emitter::addiu(T2,T2,CLASS_OBJ_OFFSET_INIT*WORD_SIZE,s);
+		Emitter::load(T2,0,T2,s);
 		
 		//Common arguments saving
 		Emitter::push(FP,s);
 		Emitter::push(SELF,s);
 		Emitter::move(SELF,ACC,s);
 		
-		Emitter::jalr(T1,s);
+		Emitter::jalr(T2,s);
 		
 		Emitter::pop(SELF,s);
 		Emitter::pop(FP,s);
@@ -549,170 +589,198 @@ void ExpressionCoder::code(ostream & s) {
 	}
 }
 
-int ExpressionCoder::count_locals_in_assign(){
-	return ExpressionCoder(((assign_class *)expr_)->get_expr()).countLocals();
+int ExpressionCoder::collect_tree_info_in_assign(){
+	return ExpressionCoder(((assign_class *)expr_)->get_expr()).collectTreeInfo();
 }
 
-int ExpressionCoder::count_locals_in_static_dispatch(){
+int ExpressionCoder::collect_tree_info_in_static_dispatch(){
 	static_dispatch_class * dispatch = (static_dispatch_class *)expr_;
-	int max = ExpressionCoder((dispatch->get_expr())).countLocals();
+	int max = ExpressionCoder((dispatch->get_expr())).collectTreeInfo();
 	int temp = 0;
 	Expressions actuals = dispatch->get_actuals();
 	
 	for (int i = actuals->first(); actuals->more(i); i = actuals->next(i)){
-		temp = ExpressionCoder(actuals->nth(i)).countLocals();
+		temp = ExpressionCoder(actuals->nth(i)).collectTreeInfo();
 		max = (temp > max ) ?  temp : max ; 
 	}
 	
 	return max;
 }
 
-int ExpressionCoder::count_locals_in_dispatch(){
+int ExpressionCoder::collect_tree_info_in_dispatch(){
 	dispatch_class * dispatch = (dispatch_class *)expr_;
-	int max = ExpressionCoder((dispatch->get_expr())).countLocals();
+	int max = ExpressionCoder((dispatch->get_expr())).collectTreeInfo();
 	int temp = 0;
 	Expressions actuals = dispatch->get_actuals();
 	
 	for (int i = actuals->first(); actuals->more(i); i = actuals->next(i)){
-		temp = ExpressionCoder(actuals->nth(i)).countLocals();
+		temp = ExpressionCoder(actuals->nth(i)).collectTreeInfo();
 		max = (temp > max ) ?  temp : max ; 
 	}
 	
 	return max;
 }
 
-int ExpressionCoder::count_locals_in_cond(){
+int ExpressionCoder::collect_tree_info_in_cond(){
 	cond_class * cond = (cond_class *)expr_;
 	int temp = 0;
-	int max = ExpressionCoder(cond->get_pred()).countLocals();
-	temp = ExpressionCoder(cond->get_then()).countLocals();
+	int max = ExpressionCoder(cond->get_pred()).collectTreeInfo();
+	temp = ExpressionCoder(cond->get_then()).collectTreeInfo();
 	max = ( temp > max ) ? temp : max ;
-	temp = ExpressionCoder(cond->get_else()).countLocals();
+	temp = ExpressionCoder(cond->get_else()).collectTreeInfo();
 	return ( temp > max ) ? temp : max ;
 	
 }
 
-int ExpressionCoder::count_locals_in_loop(){
+int ExpressionCoder::collect_tree_info_in_loop(){
 	loop_class * loop = (loop_class *)expr_;
-	int max = ExpressionCoder(loop->get_pred()).countLocals();
-	int temp = ExpressionCoder(loop->get_body()).countLocals();
+	int max = ExpressionCoder(loop->get_pred()).collectTreeInfo();
+	int temp = ExpressionCoder(loop->get_body()).collectTreeInfo();
 	return ( temp > max ) ? temp : max ;
 }
 
-int ExpressionCoder::count_locals_in_typcase(){
-	return ExpressionCoder(((typcase_class *)expr_)->get_expr()).countLocals();
+int ExpressionCoder::collect_tree_info_in_typcase(){
+	//Three things have to be done here: first, count normals -as usual-.
+	//Second, this expression has to be recorded, given also and index to it
+	//Third, and index is given to all the case branches
+	
+	typcase_class * case_ = (typcase_class *)expr_;
+	int max = ExpressionCoder(case_->get_expr()).collectTreeInfo();
+	
+ 	int loop_temp = 0;
+	int temp = 0;
+	
+	Cases cases = case_->get_cases();
+	int ind = 0;
+	
+	for (int i = cases->first(); cases->more(i); i = cases->next(i)){
+		Case_class * branch = cases->nth(i);
+		branch->set_index(ind);
+		ind++;
+		
+		loop_temp = ExpressionCoder(branch->get_expr()).collectTreeInfo();
+		
+		if (loop_temp > temp) temp = loop_temp;
+	}
+	
+	CasesTable & cases_tab = CasesTable::getInstance();
+	cases_tab.addCase(*case_);
+	case_->set_index(cases_tab.get_next_case_index());
+	case_->set_branches_count(ind);
+	
+	return (( temp > max ) ? temp : max ) + 1;
 }
 
-int ExpressionCoder::count_locals_in_block(){
+int ExpressionCoder::collect_tree_info_in_block(){
 	Expressions body =((block_class *)expr_)->get_body();
 	int max = 0;
 	int temp = 0;
 	
 	for (int i = body->first(); body->more(i); i = body->next(i)){
-		temp = ExpressionCoder(body->nth(i)).countLocals();
+		temp = ExpressionCoder(body->nth(i)).collectTreeInfo();
 		max = (temp > max ) ? temp : max ;
 	}
 	
 	return max;
 }
 
-int ExpressionCoder::count_locals_in_let(){
+int ExpressionCoder::collect_tree_info_in_let(){
 	let_class * let = (let_class *)expr_;
-	int max = ExpressionCoder(let->get_init()).countLocals();
-	int temp = ExpressionCoder(let->get_body()).countLocals();
+	int max = ExpressionCoder(let->get_init()).collectTreeInfo();
+	int temp = ExpressionCoder(let->get_body()).collectTreeInfo();
 	
 	return (( temp > max ) ? temp : max) + 1;
 }
 
-int ExpressionCoder::count_locals_in_binary_arithmetic(){
+int ExpressionCoder::collect_tree_info_in_binary_arithmetic(){
 	BinaryArithmeticExpression * expr = (BinaryArithmeticExpression *)expr_;
 	
-	int max = ExpressionCoder(expr->get_ex1()).countLocals();
-	int temp = ExpressionCoder(expr->get_ex2()).countLocals();
+	int max = ExpressionCoder(expr->get_ex1()).collectTreeInfo();
+	int temp = ExpressionCoder(expr->get_ex2()).collectTreeInfo();
 	
 	return ( temp > max ) ? temp : max ;
 }
 
 
-int ExpressionCoder::count_locals_in_binary_relational(){
+int ExpressionCoder::collect_tree_info_in_binary_relational(){
 	BinaryRelationalExpression * expr = (BinaryRelationalExpression *)expr_;
 	
-	int max = ExpressionCoder(expr->get_ex1()).countLocals();
-	int temp = ExpressionCoder(expr->get_ex2()).countLocals();
+	int max = ExpressionCoder(expr->get_ex1()).collectTreeInfo();
+	int temp = ExpressionCoder(expr->get_ex2()).collectTreeInfo();
 	
 	return ( temp > max ) ? temp : max ;
 }
 
-int ExpressionCoder::count_locals_in_neg() {
-	return ExpressionCoder(((neg_class *)expr_)->get_ex()).countLocals();
+int ExpressionCoder::collect_tree_info_in_neg() {
+	return ExpressionCoder(((neg_class *)expr_)->get_ex()).collectTreeInfo();
 }
 
-int ExpressionCoder::count_locals_in_eq(){
+int ExpressionCoder::collect_tree_info_in_eq(){
 	eq_class * expr = (eq_class *)expr_;
 	
-	int max = ExpressionCoder(expr->get_ex1()).countLocals();
-	int temp = ExpressionCoder(expr->get_ex2()).countLocals();
+	int max = ExpressionCoder(expr->get_ex1()).collectTreeInfo();
+	int temp = ExpressionCoder(expr->get_ex2()).collectTreeInfo();
 	
 	return ( temp > max ) ? temp : max ;
 }
 
-int ExpressionCoder::count_locals_in_comp(){
-	return ExpressionCoder(((comp_class *)expr_)->get_ex()).countLocals();
+int ExpressionCoder::collect_tree_info_in_comp(){
+	return ExpressionCoder(((comp_class *)expr_)->get_ex()).collectTreeInfo();
 }
 
-int ExpressionCoder::count_locals_in_isvoid(){
-	return ExpressionCoder(((isvoid_class *)expr_)->get_ex()).countLocals();	
+int ExpressionCoder::collect_tree_info_in_isvoid(){
+	return ExpressionCoder(((isvoid_class *)expr_)->get_ex()).collectTreeInfo();	
 }
 
 
-int ExpressionCoder::countLocals() {
+int ExpressionCoder::collectTreeInfo() {
 	int ret = 0;
 	switch (expr_->get_expr_type()) {
 		case Expression_class::ASSIGN:
-			ret = count_locals_in_assign();
+			ret = collect_tree_info_in_assign();
 			break;
 		case Expression_class::STATIC_DISPATCH:
-			ret = count_locals_in_static_dispatch();
+			ret = collect_tree_info_in_static_dispatch();
 			break;
 		case Expression_class::DISPATCH:
-			ret = count_locals_in_dispatch();
+			ret = collect_tree_info_in_dispatch();
 			break;
 		case Expression_class::COND:
-			ret = count_locals_in_cond();
+			ret = collect_tree_info_in_cond();
 			break;
 		case Expression_class::LOOP:
-			ret = count_locals_in_loop();
+			ret = collect_tree_info_in_loop();
 			break;
 		case Expression_class::TYPCASE:
-			ret = count_locals_in_typcase();
+			ret = collect_tree_info_in_typcase();
 			break;
 		case Expression_class::BLOCK:
-			ret = count_locals_in_block();
+			ret = collect_tree_info_in_block();
 			break;
 		case Expression_class::LET:
-			ret = count_locals_in_let();
+			ret = collect_tree_info_in_let();
 			break;
 		case Expression_class::NEG:
-			ret = count_locals_in_neg();
+			ret = collect_tree_info_in_neg();
 			break;
 		case Expression_class::EQ:
-			ret = count_locals_in_eq();
+			ret = collect_tree_info_in_eq();
 			break;
 		case Expression_class::COMP:
-			ret = count_locals_in_comp();
+			ret = collect_tree_info_in_comp();
 			break;
 		case Expression_class::ISVOID:
-			ret = count_locals_in_isvoid();
+			ret = collect_tree_info_in_isvoid();
 			break;
 		case Expression_class::PLUS:
 		case Expression_class::SUB:
 		case Expression_class::MUL:
 		case Expression_class::DIVIDE:
-			ret = count_locals_in_binary_arithmetic();
+			ret = collect_tree_info_in_binary_arithmetic();
 			break;
 		case Expression_class::LT:
 		case Expression_class::LEQ:
-			ret = count_locals_in_binary_relational();
+			ret = collect_tree_info_in_binary_relational();
 			break;
 		default: break;
 	}	

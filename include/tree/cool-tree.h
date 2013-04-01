@@ -167,7 +167,12 @@ public:
    tree_node *copy()		 { return copy_Case(); }
    virtual Case copy_Case() = 0;
 
+	virtual Expression get_expr() = 0;
+	
 	virtual void dump_with_types(ostream& ,int) = 0;
+	
+	virtual void set_index(int index) = 0;
+	virtual int get_index() = 0;
 };
 
 
@@ -418,11 +423,14 @@ protected:
    Symbol name;
    Symbol type_decl;
    Expression expr;
+	
+	int index_;
 public:
    branch_class(Symbol a1, Symbol a2, Expression a3) {
       name = a1;
       type_decl = a2;
       expr = a3;
+		index_ = -1;
    }
    Case copy_Case();
    void dump(ostream& stream, int n);
@@ -430,6 +438,9 @@ public:
 	Symbol get_name() {return name; };
 	Symbol get_type_decl(){return type_decl; };
 	Expression get_expr(){return expr; };
+	
+	void set_index(int index) { index_ = index; };
+	int get_index() { return index_; };
 	
 	void dump_with_types(ostream& ,int);
 
@@ -569,17 +580,27 @@ class typcase_class : public Expression_class {
 protected:
    Expression expr;
    Cases cases;
+	int index_;
+	int branches_count_; 
 public:
    typcase_class(Expression a1, Cases a2) {
       expr = a1;
       cases = a2;
 		ex_type = Expression_class::TYPCASE;
+		index_ = -1;
+		branches_count_ = -1;
    }
    Expression copy_Expression();
    void dump(ostream& stream, int n);
 	
 	Symbol typeIt(Class_ container_class, ObjectEnvironment oe);
 	Expression get_expr() { return expr; };
+	Cases get_cases() { return cases; };
+	int get_index() { return index_; };
+	void set_index(int ind) { index_ = ind; };
+	
+	int get_branches_count() { return branches_count_; };
+	void set_branches_count(int count) { branches_count_ = count; };
 	
 	void dump_with_types(ostream&,int);
    

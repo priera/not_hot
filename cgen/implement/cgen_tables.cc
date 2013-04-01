@@ -60,6 +60,25 @@ void CgenNodesTable::addNode(CgenNode & nd){
 	
 }
 
+CasesTable::CasesTable() : next_case_(0), cases_(NULL) {} 
+
+CasesTable & CasesTable::getInstance() {
+	static CasesTable C;
+	return C;
+}
+
+int CasesTable::get_next_case_index() {
+	return next_case_++;
+}
+
+BasicListIterator<typcase_class> * CasesTable::getIterator() {
+	return cases_->getIterator();
+}
+
+void CasesTable::addCase(typcase_class & c){
+	cases_ = new List<typcase_class>(&c, cases_);
+}
+
 MethodsOverridingTable::MethodsOverridingTable() {
 	enterscope();
 }

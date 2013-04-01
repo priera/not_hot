@@ -52,8 +52,10 @@ namespace cgen {
 		
 		void code(ostream & output);
 		
+		int get_classtag();
 		void inc_locals_count();
 		
+		CgenNode * get_nd_parent();
 		CgenMethod * findMethod(Symbol method_name);
 		List<CgenNode> * get_children_nodes();
 		

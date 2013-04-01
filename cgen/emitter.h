@@ -1,6 +1,10 @@
 #ifndef EMIT_H
 #define EMIT_H
 
+#include <sstream>
+#include <iostream>
+#include <fstream>
+
 #include "cgen_symbol.h"
 #include "constants.h"
 
@@ -16,11 +20,13 @@ namespace cgen {
 		// Global names
 		const string CLASSNAMETAB = "class_nameTab";
 		const string CLASSOBJTAB = "class_objTab";
+		const string CLASS_COUNT_TAG = "class_count";
 		const string INTTAG = "_int_tag";
 		const string BOOLTAG = "_bool_tag";
 		const string STRINGTAG = "_string_tag";
 		const string HEAP_START = "heap_start";
 		const string DISPATCH_VOID_HANDLER = "_dispatch_abort";
+		const string CASE_VOID_HANDLER = "_case_abort2";
 		
 		// Naming conventions
 		const string DISPTAB_SUFFIX = "_dispTab";
@@ -53,6 +59,10 @@ namespace cgen {
 		const int INT_SLOTS = 1;
 		const int BOOL_SLOTS = 1;
 		
+		const int WORDS_PER_CLASS_OBJ_ENTRY = 4;
+		const int CLASS_OBJ_OFFSET_PROTOBJ = 2;
+		const int CLASS_OBJ_OFFSET_INIT = 3;
+		
 		const string GLOBAL = "\t.globl\t";
 		const string ALIGN = "\t.align\t2\n";
 		const string WORD  = "\t.word\t";
@@ -64,6 +74,7 @@ namespace cgen {
 		const string ACC = "$a0";		// Accumulator 
 		const string A1 = "$a1";		// For arguments to prim funcs 
 		const string SELF = "$s0";		// Ptr to self (callee saves) 
+		const string T0 = "$t0";
 		const string T1 = "$t1";		// Temporary 1 
 		const string T2 = "$t2";		// Temporary 2 
 		const string T3 = "$t3";		// Temporary 3 
@@ -100,6 +111,7 @@ namespace cgen {
 		const string BLEQ = "\tble\t";
 		const string BLT = "\tblt\t";
 		const string BGT = "\tbgt\t";
+		const string JR = "\tjr\t";
 	}
 	
 	class Emitter {
@@ -153,6 +165,10 @@ namespace cgen {
 		static void jalr(std::string dest, ostream & s);
 		
 		static void jal(std::string address, ostream & s);
+		
+		static void jr(std::string dest, ostream & s);
+		
+		static void jump(std::string to, ostream & s);
 		
 		static void return_(ostream & s);
 		
@@ -222,7 +238,23 @@ namespace cgen {
 		
 		static void string_constant(char* s, ostream & str);
 		
+		static void case_end_ref(int case_index, ostream & s);
+		
+		static void jump_to_case_end(int case_index, ostream & s);
+		
+		static void case_branch_ref(int case_index, int branch_index, ostream & s);
+		
+		static void case_table_ref(int case_index, ostream & s);
+		
+		static void jump_to_branch_resolver(int case_index, ostream &s);
+		
+		static void jump_to_proper_branch(ostream & s);
+		
+		static void branch_resolver(ostream & s);
+		
 		static void check_dispatch_on_void(int not_void_label, int lineno, symbol::CgenStringEntry & entry, ostream & s);
+		
+		static void check_case_on_void(int not_void_label, int lineno, symbol::CgenStringEntry & entry, ostream & s);
 	};
 	
 } 

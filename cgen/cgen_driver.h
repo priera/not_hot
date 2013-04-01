@@ -22,6 +22,7 @@ namespace cgen {
 		void codeBools();
 		void emitClassNameTab();
 		void emitClassTab();
+		void emitCasesTab();
 		void emitProtObjTab();
 		void codeGlobalText();
 		void codeInitializers();

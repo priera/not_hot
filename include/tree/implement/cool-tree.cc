@@ -207,7 +207,6 @@ void class__class::checkTypes(ObjectEnvironment oe){
 	Symbol self = GlobalTables::getInstance().get_constants().self;
 	oe.addid(self, SELF_TYPE);
 	collectAttributes(oe);
-
 	TypingErrorEnvironment::getCurrentEnvironment().set_classname(std::string(name->get_string()));
 	TypingErrorEnvironment::getCurrentEnvironment().set_filename(std::string(filename->get_string()));
 	
@@ -223,7 +222,7 @@ void class__class::checkTypes(ObjectEnvironment oe){
 	for (int i = children->first(); children->more(i); i = children->next(i)){
 		children->nth(i)->checkTypes(oe);
 	}
-	
+
 	oe.exitscope();
 }
 
@@ -392,12 +391,21 @@ Symbol assign_class::typeIt(Class_ container_class, ObjectEnvironment oe) {
 	if (!error) {
 		
 		Symbol temp = oe.lookup(name);
+		Symbol temp_child = t1;
 		
-		if (!(ClassTable::getInstance().isSubtypeOf(t1, temp))){
+		if (t1 == SELF_TYPE) {
+			temp_child = container_class->get_name();
+		}
+		if (temp == SELF_TYPE) {
+			temp = container_class->get_name();
+		}
+		
+		if (!(ClassTable::getInstance().isSubtypeOf(temp_child, temp))){
 			error = true;
 			
 			registerTypingError(std::string("Inferred type of assignment expression doesn't conform its declared type"));
 		}
+
 	}
 	
 	if (error) {
@@ -564,7 +572,7 @@ Symbol typcase_class::typeIt(Class_ container_class, ObjectEnvironment oe) {
 			if (((branch_class *)cases->nth(j))->get_type_decl() == cur_declared_type) type_repeated = true;
 			j = cases->next(j);
 		}
-		cout << endl;
+		
 		if (type_repeated) {
 			error = true;
 			registerTypingError(std::string("Each \"case\" branch must have a different type"));
@@ -579,6 +587,7 @@ Symbol typcase_class::typeIt(Class_ container_class, ObjectEnvironment oe) {
 
 Symbol block_class::typeIt(Class_ container_class, ObjectEnvironment oe) {
 	Symbol s;
+	
 	for (int i = body->first(); body->more(i); i = body->next(i)){
 		s = body->nth(i)->typeIt(container_class, oe);
 	}
@@ -614,9 +623,11 @@ Symbol let_class::typeIt(Class_ container_class, ObjectEnvironment oe) {
 	
 	Symbol s = NULL;
 	if (error) {
+		
 		registerTypingError(error_message);
 		s = Object;
 	} else {
+		
 		oe.enterscope();
 		oe.addid(identifier, type_decl);
 		s = body->typeIt(container_class, oe);

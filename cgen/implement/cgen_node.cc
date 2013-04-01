@@ -8,7 +8,7 @@ CgenAttribute::CgenAttribute(attr_class attr, CgenNode & class_, int offset) : \
 	attr_class(attr), class__(&class_), offset_(offset), locals_in_init_(0) {
 	
 	if (init){
-		locals_in_init_ = ExpressionCoder(init).countLocals();
+		locals_in_init_ = ExpressionCoder(init).collectTreeInfo();
 	}
 	
 }
@@ -47,7 +47,7 @@ void CgenAttribute::emitStoreVal(std::string self_reg, ostream & s){
 }
 
 CgenMethod::CgenMethod(method_class m, CgenNode & defining_class, int offset) : method_class(m), defining_class_(&defining_class), offset_(offset), locals_count_(0) {
-	locals_count_ = ExpressionCoder(expr).countLocals();
+	locals_count_ = ExpressionCoder(expr).collectTreeInfo();
 }
 
 void CgenMethod::registerArguments(){
@@ -344,6 +344,14 @@ void CgenNode::code(ostream & output){
 	}
 	
 	acc_table.exitscope();
+}
+
+int CgenNode::get_classtag() {
+	return classtag_;
+}
+
+CgenNode * CgenNode::get_nd_parent() {
+	return parentnd_;
 }
 
 CgenMethod * CgenNode::findMethod(Symbol method_name){

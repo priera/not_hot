@@ -25,6 +25,7 @@ namespace cgen {
 		static Constants & getInstance();
 		
 		int nextClassTag();
+		int classTagCount();
 		
 		int get_base_class_tag(BASE_CLASSES class_);
 		void set_base_class_tag(BASE_CLASSES class_, int class_tag);

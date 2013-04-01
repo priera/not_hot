@@ -40,27 +40,27 @@ namespace cgen{
 		void code_no_expr(ostream &s);
 		void code_obj(ostream &s);
 		
-		int count_locals_in_assign();
-		int count_locals_in_static_dispatch();
-		int count_locals_in_dispatch();
-		int count_locals_in_cond();
-		int count_locals_in_loop();
-		int count_locals_in_typcase();
-		int count_locals_in_block();
-		int count_locals_in_let();
-		int count_locals_in_neg();
-		int count_locals_in_eq();
-		int count_locals_in_comp();
-		int count_locals_in_new();
-		int count_locals_in_isvoid();
-		int count_locals_in_binary_arithmetic();
-		int count_locals_in_binary_relational();
+		int collect_tree_info_in_assign();
+		int collect_tree_info_in_static_dispatch();
+		int collect_tree_info_in_dispatch();
+		int collect_tree_info_in_cond();
+		int collect_tree_info_in_loop();
+		int collect_tree_info_in_typcase();
+		int collect_tree_info_in_block();
+		int collect_tree_info_in_let();
+		int collect_tree_info_in_neg();
+		int collect_tree_info_in_eq();
+		int collect_tree_info_in_comp();
+		int collect_tree_info_in_new();
+		int collect_tree_info_in_isvoid();
+		int collect_tree_info_in_binary_arithmetic();
+		int collect_tree_info_in_binary_relational();
 
 	public:
 		ExpressionCoder(Expression);
 	
 		void code(ostream &);
-		int countLocals();
+		int collectTreeInfo();
 	};
 
 }

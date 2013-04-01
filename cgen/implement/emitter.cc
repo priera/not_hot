@@ -90,10 +90,6 @@ void Emitter::test_basic_equality(ostream & s){
 	label_def(done,s);
 }
 
-/*void Emitter::check_dispatch_on_void(ostream & s){
-	
-}*/
-
 void Emitter::move(std::string dest_reg, std::string source_reg, ostream & s)
 { s << MOVE << dest_reg << " " << source_reg << endl; }
 
@@ -123,6 +119,9 @@ void Emitter::sll(std::string dest, std::string src1, int num, ostream & s)
 
 void Emitter::jalr(std::string dest, ostream & s)
 { s << JALR << "\t" << dest << endl; }
+
+void Emitter::jr(std::string dest, ostream & s)
+{ s << JR << "\t" << dest << endl; }
 
 void Emitter::jal(std::string address, ostream & s)
 { s << JAL << address << endl; }
@@ -306,6 +305,57 @@ void Emitter::gc_check(std::string source, ostream & s)
 	s << JAL << "_gc_check" << endl;
 }
 
+void Emitter::case_branch_ref(int case_index, int branch_index, ostream & s){
+	s << "case_" << case_index << "_branch_" << branch_index;
+}
+
+void Emitter::case_end_ref(int case_index, ostream & s){
+	s << "end_case_" << case_index;
+}
+
+void Emitter::case_table_ref(int case_index, ostream & s){
+	s << "case_" << case_index;
+}
+
+void Emitter::jump_to_case_end(int case_index, ostream & s){
+	s << BRANCH;
+	case_end_ref(case_index, s);
+	s << "\n";
+}
+
+void Emitter::branch_resolver(ostream & s){
+	ifstream myfile("./as/branch_resolver.s"); //TODO: resoldre el path
+	string line;
+	if (myfile.is_open())
+	{		
+		while ( myfile.good() )
+		{
+			getline(myfile,line);
+			s << line << endl;
+		}
+		myfile.close();
+	}
+}
+
+void Emitter::jump_to_branch_resolver(int case_index, ostream &s){
+	ostringstream ss;
+	ss << case_index;
+	
+	load_address(T1,std::string("case_") + ss.str() ,s);
+	load_address(T2,CLASS_COUNT_TAG,s);
+	load(T2,0,T2,s);
+	s << JAL << "_branch_resolver" << "\n";
+}
+
+void Emitter::jump_to_proper_branch(ostream & s){
+	load_imm(T2,2*WORD_SIZE,s);
+	mul(T0,T0,T2,s);
+	add(T1,T1,T0,s);
+	addiu(T1,T1,WORD_SIZE,s);
+	load(T1,0,T1,s);
+	jr(T1,s);
+}
+
 void Emitter::check_dispatch_on_void(int not_void_label, int lineno, symbol::CgenStringEntry & entry, ostream & s){
 	Emitter::load_imm(T1,0,s);
 	Emitter::bne(ACC,T1,not_void_label,s);
@@ -313,6 +363,17 @@ void Emitter::check_dispatch_on_void(int not_void_label, int lineno, symbol::Cge
 	Emitter::partial_load_address(ACC,s);
 	entry.code_ref(s); s << endl;
 	Emitter::jal(DISPATCH_VOID_HANDLER, s);
+	
+	Emitter::label_def(not_void_label,s);
+}
+
+void Emitter::check_case_on_void(int not_void_label, int lineno, symbol::CgenStringEntry & entry, ostream & s){
+	Emitter::load_imm(T1,0,s);
+	Emitter::bne(ACC,T1,not_void_label,s);
+	Emitter::load_imm(T1,lineno,s);
+	Emitter::partial_load_address(ACC,s);
+	entry.code_ref(s); s << endl;
+	Emitter::jal(CASE_VOID_HANDLER, s);
 	
 	Emitter::label_def(not_void_label,s);
 }

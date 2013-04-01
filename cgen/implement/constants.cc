@@ -14,6 +14,10 @@ int Constants::nextClassTag() {
 	return ++next_class_tag_;
 }
 
+int Constants::classTagCount() {
+	return next_class_tag_;
+}
+
 int Constants::get_base_class_tag(BASE_CLASSES class_){
 	switch (class_) {
 		case OBJECT: return obj_class_tag_;
