@@ -3,9 +3,9 @@
  */
 
 %{
-#include <cool-parse.h>
+//#include <cool-parse.h>
 #include <stringtab.h>
-#include <utilities.h>
+#include <basic.h>
 #include "LexerWrapper.h"
 #include "ParserDriver.h"
 

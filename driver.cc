@@ -2,10 +2,9 @@
 #include <unistd.h>     // for getopt
 #include <cstdlib>
 
-#include "utilities.h"
-#include "cool-tree.h"
-#include "stringtab.h"
-#include "flags.h"
+#include <basic.h>
+#include <cool-tree.h>
+#include <stringtab.h>
 #include "ParserDriver.h"
 #include "semant_driver.h"
 #include "cgen_driver.h"
@@ -121,7 +120,7 @@ int main(int argc, char** argv) {
 		optind++;
 	}
 	
-	check_semant(r);
+ 	check_semant(r);
 	
 	code(*getOutputStream(argc, argv));
 	

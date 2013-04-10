@@ -16,9 +16,10 @@
 
 %code requires {
   #include <iostream>
-  #include "cool-tree.h"
-  #include "stringtab.h"
-  #include "utilities.h"
+  #include <basic.h>
+  #include <tree.h>
+  #include <cool-tree.h>
+  #include <stringtab.h>
   
   //Forward declaration of parsing classes
 	namespace parsing {
@@ -68,7 +69,7 @@
     
     /* A union of all the types that can be the result of parsing actions. */
     %union {
-      Boolean boolean;
+      bool boolean;
       Symbol symbol;
       Program program;
       Class_ class_;

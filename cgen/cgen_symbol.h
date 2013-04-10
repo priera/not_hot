@@ -1,7 +1,7 @@
 #ifndef CGEN_SYMBOL_H
 #define CGEN_SYMBOL_H
 
-#include "symbol.h"
+#include <basic.h>
 #include "stringtab.h"
 
 namespace cgen {

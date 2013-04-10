@@ -1,11 +1,10 @@
-#include "cool-io.h"
-#include "flags.h"
-#include "utilities.h"
-#include "cool-parse.h"
+#include <basic.h>
+#include <cool-tree.h>
+
+//#include "cool-parse.h" <<-esborrar aquest fitxer
 #include "cool.tab.hh"
 #include "LexerWrapper.h"
-#include "cool-tree.h"
-#include "lineno_mng.h"
+
 
 namespace parsing {
 	

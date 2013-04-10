@@ -1,11 +1,11 @@
 #ifndef CGEN_DRIVER_H
 #define CGEN_DRIVER_H 
 
-#include "flags.h"
+#include <basic.h>
 #include "emitter.h"
 #include "stringtab.h"
-#include "symbol.h"
 #include "main_tables.h"
+
 #include "cgen_node.h"
 #include "cgen_tables.h"
 

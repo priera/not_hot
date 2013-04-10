@@ -2,10 +2,12 @@
 #define SEMANT_DRIVER_H
 
 #include <iostream>  
-#include "cool-io.h"
-#include "cool-tree.h"
-#include "stringtab.h"
-#include "main_tables.h"
+
+#include <basic.h>
+#include <cool-tree.h>
+#include <stringtab.h>
+#include <main_tables.h>
+
 #include "inheritance_checker.h"
 
 namespace semant {

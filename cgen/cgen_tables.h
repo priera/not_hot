@@ -1,7 +1,7 @@
 #ifndef CODIFIER_STR_H
 #define CODIFIER_STR_H
 
-#include "list.h"
+#include <basic.h>
 #include "stringtab.h"
 #include "symtab.h"
 #include "cgen_symbol.h"
