@@ -54,7 +54,7 @@ That will produce a file called test.s.
 Execute the compiled program
 ----------------------------
 
-If want to run the file "test.s" using spim, you only have to type:
+If you want to run the file "test.s" using spim, you only have to type:
 
 > $spim -file test.s  
 
