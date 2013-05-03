@@ -3,13 +3,12 @@ include_directories("${PROJECT_SOURCE_DIR}/lib/main_structures/tree")
 include_directories("${PROJECT_SOURCE_DIR}/lib/main_structures/tables")
 include_directories("${PROJECT_SOURCE_DIR}/parsing")
 
-add_library(parsing STATIC ./driver/ParserDriver.cc ./lexer/lex.yy.cc ./parser/cool.tab.cc)
+add_library(parsing STATIC ./driver/ParserDriver.cc ./lex.yy.cc ./parser/cool.tab.cc)
 
 # Custom commands to invoke flex and bison.
 add_custom_command(OUTPUT lex.yy.cc
-                   COMMAND ${FLEX} cool.flex 
+                   COMMAND ${FLEX} ${PROJECT_SOURCE_DIR}/parsing/lexer/cool.flex 
                    COMMENT "Generating lexer"
-                   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/parsing/lexer
                    VERBATIM)
 
 add_custom_command(OUTPUT cool.tab.cc
