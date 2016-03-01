@@ -1,4 +1,5 @@
 #include "cool-tree.h"
+#include <basic/cool.h>
 
 // constructors' functions
 Program program_class::copy_Program()
