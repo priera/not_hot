@@ -2,18 +2,23 @@ cmake_minimum_required(VERSION 2.8)
 
 find_program(FLEX flex DOC "Path to the flex lexical analyser generator.")
 if(NOT FLEX)
-  message(SEND_ERROR "Flex not found.")
+  message(FATAL_ERROR "Flex not found. Install the \"flex\" package")
 endif()
 
 find_program(BISON bison DOC "Path to the bison parser generator.")
 if(NOT BISON)
-  message(SEND_ERROR "Bison not found.")
+  message(FATAL_ERROR "Bison not found. Install de \"bison\" package")
 endif()
 
 find_program(SPIM spim DOC "Used to simulate progam's execution")
 if (NOT SPIM)
-	message(SEND_ERROR "Spim no found")
+	message(SEND_ERROR "Spim no found. You will need a MIPS simulator in order to run the produced code")
 endif()
+
+set(CMAKE_BUILD_TYPE RELEASE)
+
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -std=c++11")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -std=c++11")
 
 project(not_hot)
 
