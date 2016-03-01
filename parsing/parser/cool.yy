@@ -82,7 +82,7 @@
       Cases cases;
       Expression expression;
       Expressions expressions;
-      char *error_msg;
+      char const *error_msg;
     }
     
     /* 
