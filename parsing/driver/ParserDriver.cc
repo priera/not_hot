@@ -107,7 +107,7 @@ namespace parsing {
 		return Parser::token::ERROR;
 	}
 	
-	char* TokenHelper::toString(){
+	char const * TokenHelper::toString(){
 		switch (token) {
 			case 0:            					return("EOF");        break;
 			case (Parser::token::CLASS):      return("CLASS");      break;

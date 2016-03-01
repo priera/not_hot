@@ -84,7 +84,7 @@ public:
    // Create pointer to current symbol table.
    SymbolTable &operator =(const SymbolTable &s) { tbl = s.tbl; return *this; }
 
-   void fatal_error(char * msg)
+   void fatal_error(char const * msg)
    {
      cerr << msg << "\n";
      exit(1);

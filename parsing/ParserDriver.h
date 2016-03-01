@@ -64,7 +64,7 @@ namespace parsing {
 		/**Given a string representation OF A KEYWORD -which also cannot be true or false-, returns its token*/
 		static Parser::token_type get_keyword_token(char *str);
 		
-		char * toString();
+		char const * toString();
 		void dump(ostream& out, int lineno);
 	};
 	
