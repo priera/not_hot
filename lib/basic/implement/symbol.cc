@@ -1,12 +1,12 @@
 #include "symbol.h"
 
-Entry::Entry(char *s, int l, int i) : len(l), index(i) {
+Entry::Entry(char const *s, int l, int i) : len(l), index(i) {
 	str = new char [len+1];
 	strncpy(str, s, len);
 	str[len] = '\0';
 }
 
-int Entry::equal_string(char *string, int length) const
+int Entry::equal_string(char const *string, int length) const
 {
 	return (len == length) && (strncmp(str,string,len) == 0);
 }
@@ -51,6 +51,6 @@ void dump_Symbol(ostream& s, int n, Symbol sym)
 	s << pad(n) << sym << endl;
 }
 
-StringEntry::StringEntry(char *s, int l, int i) : Entry(s,l,i) { }
-IdEntry::IdEntry(char *s, int l, int i) : Entry(s,l,i) { }
-IntEntry::IntEntry(char *s, int l, int i) : Entry(s,l,i) { }
+StringEntry::StringEntry(char const *s, int l, int i) : Entry(s,l,i) { }
+IdEntry::IdEntry(char const *s, int l, int i) : Entry(s,l,i) { }
+IntEntry::IntEntry(char const *s, int l, int i) : Entry(s,l,i) { }

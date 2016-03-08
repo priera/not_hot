@@ -337,14 +337,14 @@ ostream& operator<<(ostream& s, Symbol sym);
 
 class Entry {
 protected:
-	char *str;     // the string
+	char const *str;     // the string
 	int  len;      // the length of the string (without trailing \0)
 	int index;     // a unique index for each string
 public:
-	Entry(char *s, int l, int i);
+	Entry(char const *s, int l, int i);
 	
 	// is string argument equal to the str of this Entry?
-	int equal_string(char *s, int len) const;  
+	int equal_string(char const *s, int len) const;  
 	
 	// is the integer argument equal to the index of this Entry?
 	bool equal_index(int ind) const           { return ind == index; }
@@ -352,7 +352,7 @@ public:
 	ostream& print(ostream& s) const;
 	
 	// Return the str and len components of the Entry.
-	char *get_string() const;
+	char const *get_string() const;
 	int get_len() const;
 };
 
@@ -371,17 +371,17 @@ public:
 //
 class StringEntry : public Entry {
 public:
-	StringEntry(char *s, int l, int i);
+	StringEntry(char const *s, int l, int i);
 };
 
 class IdEntry : public Entry {
 public:
-	IdEntry(char *s, int l, int i);
+	IdEntry(char const *s, int l, int i);
 };
 
 class IntEntry: public Entry {
 public:
-	IntEntry(char *s, int l, int i);
+	IntEntry(char const *s, int l, int i);
 };
 
 typedef StringEntry *StringEntryP;
@@ -390,7 +390,7 @@ typedef IntEntry *IntEntryP;
 
 #endif
 
-void fatal_error(char *);
+void fatal_error(char const *);
 void print_escaped_string(ostream& str, const char *s);
 char * pad(int);
 char * changeCase(char * a); 

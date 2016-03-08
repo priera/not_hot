@@ -398,7 +398,7 @@ void Emitter::byte_mode(ostream& str)
 	}
 }
 
- void Emitter::string_constant(char* s, ostream& str)
+ void Emitter::string_constant(char const * s, ostream& str)
 {
 	ascii = 0;
 	

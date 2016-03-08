@@ -236,7 +236,7 @@ namespace cgen {
 		
 		static void gc_check(std::string source, ostream & s);
 		
-		static void string_constant(char* s, ostream & str);
+		static void string_constant(char const * s, ostream & str);
 		
 		static void case_end_ref(int case_index, ostream & s);
 		

@@ -33,10 +33,10 @@ public:
    // Returns a pointer to the string table entry with the string.
 
    // add the prefix of s of length maxchars
-   Elem *add_string(char *s, int maxchars);
+   Elem *add_string(char const *s, int maxchars);
 
    // add the (null terminated) string s
-   Elem *add_string(char *s);
+   Elem *add_string(char const *s);
 
    // add the string representation of an integer
    Elem *add_int(int i);
@@ -48,7 +48,7 @@ public:
    int next(int i);   // next index
 
    Elem *lookup(int index);      // lookup an element using its index
-   Elem *lookup_string(char *s); // lookup an element using its string
+   Elem *lookup_string(char const *s); // lookup an element using its string
 
    void print();  // print the entire table; for debugging
 
@@ -59,7 +59,7 @@ class IdTable : public StringTable<IdEntry> { };
 class StrTable : public StringTable<StringEntry>
 {
 public: 
-	StringEntry *add_string(char *s);
+	StringEntry *add_string(char const *s);
 };
 
 class IntTable : public StringTable<IntEntry>
