@@ -6,16 +6,16 @@ Yet not another "not hot" programming language compiler
 About the cool programming language 
 -----------------------------------
 
-Cool is a programming language designed by Stanford university, and is used as a reference language in compiler's classes. You can find basic information about it [here](http://en.wikipedia.org/wiki/Cool_(programming_language%29)
+Cool is a programming language designed by Stanford university, and is used as a reference language in compiler's classes. You can find basic information about it [here](https://en.wikipedia.org/wiki/Cool_(programming_language))
 
 About "not_hot"
 ---------------
 
-Not_hot is a compiler for the cool language. I tagged it as "yet not another" because it does not follow many of the conventions that many others cool compilers follows: 
+Not_hot is a compiler for the cool language. I tagged it as "yet not another" because it does not follow many of the conventions that many others "cool" compilers follows: 
 
 * It produces a single executable, instead of four.
-* Is object oriented: each compiler phase has its own set of classes to do its job. These classes are splitted in several files, instead of being all in the same file.
-* Also, this implementation doesn't rely on extern variables, nor in macros.
+* Is object oriented: each compiler phase has its own set of classes to do their job. These classes are splitted in several files, instead of being all in the same file.
+* Also, this implementation doesn't rely on "extern" variables, nor in macros.
 
 However, not_hot still uses the data structures implemented and provided by Stanford -stringtable, symbol table, and tree package-. Many debugging functionalities -such as printing the program's tree- are those provided by Stanford. The compiler also generates MIPS code, just as the reference compiler, and the custom exception handler is the same than Stanford's.
 I do not reclaim any kind of intellectual property over Stanford's code, and not copyright infringement is intended.
@@ -42,8 +42,6 @@ Download the project at a directory of your election. Navigate to that directory
 > $cd build  
 > $cmake ..  
 > $make  
-
-You can also use KDevelop to do all this process through a graphical user interface.
 
 To run the compiler on a file called "test.cl", from the directory "buid", type:
 
