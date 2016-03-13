@@ -6,7 +6,7 @@ Yet not another "not hot" programming language compiler
 About the cool programming language 
 -----------------------------------
 
-Cool is a programming language designed by Stanford university, and is used as a reference language in compiler's classes. You can find basic information about it [here](https://en.wikipedia.org/wiki/Cool_(programming_language))
+Cool is a programming language designed by Stanford university, and is used as a reference language in compiler's classes. You can find basic information about it [here](https://en.wikipedia.org/wiki/Cool_%28programming_language%29)
 
 About "not_hot"
 ---------------
