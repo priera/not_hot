@@ -28,6 +28,11 @@ void print_usage_and_exit(char* execname){
 
 CompilerFlags check_flags(int argc, char ** argv){
 	
+	if (argc == 1){
+		std::cout << "Error: no input file\n";
+		print_usage_and_exit(argv[0]);
+	}
+
 	CompilerFlags flags = CompilerFlags(argc, argv);
 	
 	if (flags.wasError())
